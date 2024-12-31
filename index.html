@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Slider com Arraste</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      background-color: #222;
+    }
+
+    .slider {
+      position: relative;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      width: 90%;
+      max-width: 400px;
+      overflow: hidden;
+    }
+
+    .slides {
+      display: flex;
+      transition: transform 0.3s ease;
+    }
+
+    .slide {
+      min-width: 100%; /* Apenas uma imagem visível */
+      flex-shrink: 0;
+    }
+
+    .slide img {
+      width: 100%;
+      height: auto;
+      border-radius: 10px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+    }
+  </style>
+</head>
+<body>
+  <div class="slider">
+    <div class="slides">
+      <div class="slide"><img src="https://via.placeholder.com/300x400" alt="Foto 1"></div>
+      <div class="slide"><img src="https://via.placeholder.com/300x400" alt="Foto 2"></div>
+      <div class="slide"><img src="https://via.placeholder.com/300x400" alt="Foto 3"></div>
+      <div class="slide"><img src="https://via.placeholder.com/300x400" alt="Foto 4"></div>
+    </div>
+  </div>
+
+  <script>
+    const slidesContainer = document.querySelector('.slides');
+    const slides = document.querySelectorAll('.slide');
+    let isDragging = false;
+    let startPos = 0;
+    let currentTranslate = 0;
+    let prevTranslate = 0;
+    let animationID = 0;
+    let currentIndex = 0;
+
+    function setPositionByIndex() {
+      currentTranslate = -currentIndex * slides[0].clientWidth;
+      prevTranslate = currentTranslate;
+      setSliderPosition();
+    }
+
+    function setSliderPosition() {
+      slidesContainer.style.transform = `translateX(${currentTranslate}px)`;
+    }
+
+    function animation() {
+      setSliderPosition();
+      if (isDragging) requestAnimationFrame(animation);
+    }
+
+    function touchStart(index) {
+      return function (event) {
+        currentIndex = index;
+        startPos = getPositionX(event);
+        isDragging = true;
+        animationID = requestAnimationFrame(animation);
+        slidesContainer.style.transition = 'none';
+      };
+    }
+
+    function touchEnd() {
+      isDragging = false;
+      cancelAnimationFrame(animationID);
+
+      const movedBy = currentTranslate - prevTranslate;
+
+      if (movedBy < -100 && currentIndex < slides.length - 1) currentIndex += 1;
+      if (movedBy > 100 && currentIndex > 0) currentIndex -= 1;
+
+      setPositionByIndex();
+      slidesContainer.style.transition = 'transform 0.3s ease';
+    }
+
+    function touchMove(event) {
+      if (isDragging) {
+        const currentPosition = getPositionX(event);
+        currentTranslate = prevTranslate + currentPosition - startPos;
+      }
+    }
+
+    function getPositionX(event) {
+      return event.type.includes('mouse') ? event.pageX : event.touches[0].clientX;
+    }
+
+    slides.forEach((slide, index) => {
+      slide.addEventListener('touchstart', touchStart(index));
+      slide.addEventListener('touchend', touchEnd);
+      slide.addEventListener('touchmove', touchMove);
+      slide.addEventListener('mousedown', touchStart(index));
+      slide.addEventListener('mouseup', touchEnd);
+      slide.addEventListener('mousemove', touchMove);
+      slide.addEventListener('mouseleave', () => {
+        if (isDragging) touchEnd();
+      });
+    });
+
+    // Inicializa a posição correta
+    setPositionByIndex();
+  </script>
+</body>
+</html>
